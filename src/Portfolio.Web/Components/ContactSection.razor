@@ -1,0 +1,175 @@
+@inject PortfolioApiClient Api
+@implements IDisposable
+
+<section id="contact" class="section">
+    <div class="page">
+        <div class="section__head" data-reveal>
+            <span class="eyebrow">Contact</span>
+            <h2 class="section__title">Let's talk</h2>
+            <p class="section__lead">
+                Open to interesting .NET work, collaboration, or just a good conversation about
+                Blazor and where AI-assisted development is going.
+            </p>
+        </div>
+
+        <div class="contact">
+            <div data-reveal>
+                <h3>Direct lines</h3>
+                <div class="contact__links">
+                    <a class="link-row" href="mailto:@Profile.Email">
+                        <span class="link-row__icon"><Icon Name="mail" /></span>
+                        <span>
+                            <span class="link-row__label">Email</span>
+                            <span class="link-row__value">@Profile.Email</span>
+                        </span>
+                        <span class="link-row__arrow"><Icon Name="arrow-up-right" /></span>
+                    </a>
+
+                    <a class="link-row" href="tel:@Profile.Phone.Replace(" ", "")">
+                        <span class="link-row__icon"><Icon Name="phone" /></span>
+                        <span>
+                            <span class="link-row__label">Phone</span>
+                            <span class="link-row__value">@Profile.Phone</span>
+                        </span>
+                        <span class="link-row__arrow"><Icon Name="arrow-up-right" /></span>
+                    </a>
+
+                    <a class="link-row" href="@ResumeData.LinkedInUrl" target="_blank" rel="noopener">
+                        <span class="link-row__icon"><Icon Name="linkedin" /></span>
+                        <span>
+                            <span class="link-row__label">LinkedIn</span>
+                            <span class="link-row__value">in/chris-galanis</span>
+                        </span>
+                        <span class="link-row__arrow"><Icon Name="arrow-up-right" /></span>
+                    </a>
+
+                    <a class="link-row" href="@ResumeData.GitHubUrl" target="_blank" rel="noopener">
+                        <span class="link-row__icon"><Icon Name="github" /></span>
+                        <span>
+                            <span class="link-row__label">GitHub</span>
+                            <span class="link-row__value">@ResumeData.GitHubUrl.Replace("https://", "")</span>
+                        </span>
+                        <span class="link-row__arrow"><Icon Name="arrow-up-right" /></span>
+                    </a>
+                </div>
+            </div>
+
+            @if (Api.ContactEnabled)
+            {
+                <EditForm class="card form" Model="_model" OnValidSubmit="SubmitAsync" data-reveal style="--reveal-delay: 120ms">
+                    <DataAnnotationsValidator />
+
+                    <div class="field--row">
+                        <div class="field">
+                            <label for="c-name">Name</label>
+                            <InputText id="c-name" @bind-Value="_model.Name" placeholder="Your name" autocomplete="name" />
+                            <ValidationMessage For="() => _model.Name" />
+                        </div>
+                        <div class="field">
+                            <label for="c-email">Email</label>
+                            <InputText id="c-email" @bind-Value="_model.Email" placeholder="@("you@example.com")" autocomplete="email" />
+                            <ValidationMessage For="() => _model.Email" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="c-subject">Subject <span class="form__note">(optional)</span></label>
+                        <InputText id="c-subject" @bind-Value="_model.Subject" placeholder="What's this about?" />
+                        <ValidationMessage For="() => _model.Subject" />
+                    </div>
+
+                    <div class="field">
+                        <label for="c-message">Message</label>
+                        <InputTextArea id="c-message" rows="6" @bind-Value="_model.Message" placeholder="Tell me what you have in mind…" />
+                        <ValidationMessage For="() => _model.Message" />
+                    </div>
+
+                    @* Honeypot — hidden from people, irresistible to bots. *@
+                    <div class="hp" aria-hidden="true">
+                        <label for="c-website">Leave this field empty</label>
+                        <InputText id="c-website" @bind-Value="_model.Website" tabindex="-1" autocomplete="off" />
+                    </div>
+
+                    @if (_result is not null)
+                    {
+                        <div class="alert @(_result.Success ? "alert--ok" : "alert--err")" role="status">
+                            <Icon Name="@(_result.Success ? "check" : "alert")" />
+                            <span>
+                                @_result.Message
+                                @if (_result.Errors is { Count: > 0 })
+                                {
+                                    @* Only reachable if the server rejects something the client model allowed. *@
+                                    <ul>
+                                        @foreach (var message in _result.Errors.SelectMany(e => e.Value))
+                                        {
+                                            <li>@message</li>
+                                        }
+                                    </ul>
+                                }
+                            </span>
+                        </div>
+                    }
+
+                    <div class="form__foot">
+                        <span class="form__note">I usually reply within a couple of days.</span>
+                        <button class="btn btn--primary" type="submit" disabled="@_sending">
+                            @if (_sending)
+                            {
+                                <span class="spinner"></span>
+                                <span>Sending…</span>
+                            }
+                            else
+                            {
+                                <Icon Name="send" />
+                                <span>Send message</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <div class="card form" data-reveal style="--reveal-delay: 120ms">
+                    <h3>Prefer email?</h3>
+                    <p class="section__lead">
+                        The contact form runs against <code>Portfolio.Api</code>, which isn't deployed for this build.
+                        Email is the fastest way to reach me.
+                    </p>
+                    <a class="btn btn--primary" href="mailto:@Profile.Email">
+                        <Icon Name="mail" /> Email @Profile.FullName.Split(' ')[0]
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Profile Profile { get; set; } = default!;
+
+    private ContactRequest _model = new();
+    private SubmitResult? _result;
+    private bool _sending;
+    private CancellationTokenSource _cts = new();
+
+    private async Task SubmitAsync()
+    {
+        _sending = true;
+        _result = null;
+
+        _result = await Api.SendContactAsync(_model, _cts.Token);
+
+        if (_result.Success)
+        {
+            _model = new ContactRequest();
+        }
+
+        _sending = false;
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

@@ -1,0 +1,35 @@
+<section id="education" class="section">
+    <div class="page">
+        <div class="section__head" data-reveal>
+            <span class="eyebrow">Education</span>
+            <h2 class="section__title">University of Piraeus, Digital Systems</h2>
+        </div>
+
+        <div class="edu-grid">
+            @foreach (var (item, index) in Items.Select((x, i) => (x, i)))
+            {
+                <article class="card edu-card" data-reveal style="--reveal-delay: @(index * 110)ms">
+                    <span class="fact__icon"><Icon Name="graduation" /></span>
+                    <h3 class="edu-card__degree">
+                        @item.Degree
+                        @if (item.Current)
+                        {
+                            <span class="badge-now">In progress</span>
+                        }
+                    </h3>
+                    <div class="edu-card__inst">@item.Institution</div>
+                    <div class="edu-card__dept">@item.Department</div>
+
+                    <div class="edu-card__foot">
+                        <span>@item.Period</span>
+                        <span>@(item.Grade ?? item.Location)</span>
+                    </div>
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<EducationItem> Items { get; set; } = [];
+}

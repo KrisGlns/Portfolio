@@ -1,0 +1,69 @@
+<section id="about" class="section">
+    <div class="page">
+        <div class="section__head" data-reveal>
+            <span class="eyebrow">About</span>
+            <h2 class="section__title">A developer who ships, tests and owns it</h2>
+        </div>
+
+        <div class="about">
+            <div class="about__body" data-reveal>
+                @foreach (var paragraph in Profile.About)
+                {
+                    <p>@paragraph</p>
+                }
+            </div>
+
+            <aside class="card facts" data-reveal style="--reveal-delay: 120ms">
+                <div class="fact">
+                    <span class="fact__icon"><Icon Name="briefcase" /></span>
+                    <div>
+                        <span class="fact__label">Currently</span>
+                        <span class="fact__value">@CurrentRole</span>
+                    </div>
+                </div>
+                <div class="fact">
+                    <span class="fact__icon"><Icon Name="map-pin" /></span>
+                    <div>
+                        <span class="fact__label">Location</span>
+                        <span class="fact__value">@Profile.Location</span>
+                    </div>
+                </div>
+                <div class="fact">
+                    <span class="fact__icon"><Icon Name="globe" /></span>
+                    <div>
+                        <span class="fact__label">Languages</span>
+                        <span class="fact__value">Greek (native), English (C2)</span>
+                    </div>
+                </div>
+                <div class="fact">
+                    <span class="fact__icon"><Icon Name="mail" /></span>
+                    <div>
+                        <span class="fact__label">Email</span>
+                        <a class="fact__value" href="mailto:@Profile.Email">@Profile.Email</a>
+                    </div>
+                </div>
+                <div class="fact">
+                    <span class="fact__icon"><Icon Name="phone" /></span>
+                    <div>
+                        <span class="fact__label">Phone</span>
+                        <a class="fact__value" href="tel:@Profile.Phone.Replace(" ", "")">@Profile.Phone</a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Profile Profile { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyList<ExperienceItem> Experience { get; set; } = [];
+
+    private string CurrentRole
+    {
+        get
+        {
+            var role = Experience.FirstOrDefault(e => e.Current);
+            return role is null ? Profile.Title : $"{role.Role} @ {role.Company}";
+        }
+    }
+}

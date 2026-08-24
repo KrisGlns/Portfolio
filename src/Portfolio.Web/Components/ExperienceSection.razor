@@ -1,0 +1,55 @@
+<section id="experience" class="section">
+    <div class="page">
+        <div class="section__head" data-reveal>
+            <span class="eyebrow">Experience</span>
+            <h2 class="section__title">Where I've been building</h2>
+            <p class="section__lead">
+                From log analysis and containers into enterprise .NET — each role added a layer to how I
+                design, test and deliver software.
+            </p>
+        </div>
+
+        <ol class="timeline">
+            @foreach (var (item, index) in Items.Select((x, i) => (x, i)))
+            {
+                <li class="tl-item @(item.Current ? "tl-item--current" : null)"
+                    data-reveal style="--reveal-delay: @(index * 90)ms">
+                    <article class="card tl-card">
+                        <header class="tl-card__head">
+                            <div>
+                                <h3 class="tl-card__company">
+                                    @item.Company
+                                    @if (item.Current)
+                                    {
+                                        <span class="badge-now">Now</span>
+                                    }
+                                </h3>
+                                <div class="tl-card__role">@item.Role</div>
+                                <div class="tl-card__meta"><Icon Name="map-pin" /> @item.Location</div>
+                            </div>
+                            <time class="tl-card__period">@item.Period</time>
+                        </header>
+
+                        <ul class="tl-card__list">
+                            @foreach (var achievement in item.Achievements)
+                            {
+                                <li>@achievement</li>
+                            }
+                        </ul>
+
+                        <div class="chips">
+                            @foreach (var tech in item.Stack)
+                            {
+                                <span class="chip">@tech</span>
+                            }
+                        </div>
+                    </article>
+                </li>
+            }
+        </ol>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ExperienceItem> Items { get; set; } = [];
+}

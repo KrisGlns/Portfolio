@@ -1,0 +1,38 @@
+@page "/"
+@inject PortfolioApiClient Api
+@inject IJSRuntime JS
+
+<PageTitle>Christos Galanis — .NET Developer</PageTitle>
+
+@if (_resume is null)
+{
+    <div class="boot">
+        <div class="boot__mark">CG</div>
+        <div class="boot__bar"><span></span></div>
+        <p class="boot__text">Fetching resume…</p>
+    </div>
+}
+else
+{
+    <Hero Profile="_resume.Profile" Highlights="_resume.Highlights" />
+    <AboutSection Profile="_resume.Profile" Experience="_resume.Experience" />
+    <ExperienceSection Items="_resume.Experience" />
+    <EducationSection Items="_resume.Education" />
+    <SkillsSection Categories="_resume.Skills" />
+    <ContactSection Profile="_resume.Profile" />
+}
+
+@code {
+    private Resume? _resume;
+
+    protected override async Task OnInitializedAsync() => _resume = await Api.GetResumeAsync();
+
+    // The sections only exist after the resume arrives, so the observers are re-pointed
+    // on every render pass rather than once at startup.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_resume is null) return;
+        await JS.InvokeVoidAsync("portfolio.observeReveals");
+        await JS.InvokeVoidAsync("portfolio.refreshSections");
+    }
+}

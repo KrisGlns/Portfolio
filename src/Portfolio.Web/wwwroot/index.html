@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Christos Galanis — .NET Developer</title>
+    <meta name="description" content="Portfolio of Christos Galanis, a .NET developer in Athens, Greece building enterprise software with .NET, Blazor and SQL Server." />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#08090d" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Christos Galanis — .NET Developer" />
+    <meta property="og:description" content="Enterprise software on .NET — from Blazor front ends to the SQL underneath." />
+
+    <base href="/" />
+    <link rel="preload" id="webassembly" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <script type="importmap"></script>
+
+    <!-- Resolve the theme before first paint so there is no flash of the wrong palette. -->
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem('portfolio-theme');
+                var theme = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) { /* private mode: keep the dark default */ }
+        })();
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="boot">
+            <div class="boot__mark">CG</div>
+            <div class="boot__bar"><span></span></div>
+            <p class="boot__text">Loading .NET runtime&hellip;</p>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Something went wrong.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+
+    <script src="js/site.js"></script>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+</body>
+
+</html>

@@ -1,0 +1,83 @@
+@* Above the fold: who, what, where — plus a code card that says ".NET" without a paragraph of prose. *@
+
+<section id="hero" class="hero">
+    <div class="page">
+        <div class="hero__grid">
+            <div data-reveal>
+                <span class="status">
+                    <span class="status__dot"></span>
+                    Based in @Profile.Location
+                </span>
+
+                <h1 class="hero__name">@Profile.FullName</h1>
+
+                <p class="hero__role">
+                    <strong>@Profile.Title</strong>
+                    <span>&mdash; building enterprise software</span>
+                    <span class="hero__caret">&nbsp;</span>
+                </p>
+
+                <p class="hero__tagline">@Profile.Tagline</p>
+
+                <div class="hero__actions">
+                    <a class="btn btn--primary" href="@Profile.CvUrl" download>
+                        <Icon Name="download" /> Download CV
+                    </a>
+                    <a class="btn btn--ghost" href="#contact">
+                        <Icon Name="mail" /> Get in touch
+                    </a>
+                    <a class="btn btn--ghost" href="@ResumeData.GitHubUrl" target="_blank" rel="noopener">
+                        <Icon Name="github" /> GitHub
+                    </a>
+                </div>
+            </div>
+
+            <div class="codecard" data-reveal style="--reveal-delay: 140ms">
+                <div class="codecard__bar">
+                    <span class="codecard__dot"></span>
+                    <span class="codecard__dot"></span>
+                    <span class="codecard__dot"></span>
+                    <span class="codecard__file">About.cs</span>
+                </div>
+                <pre class="codecard__body"><code>@((MarkupString)Snippet)</code></pre>
+            </div>
+        </div>
+
+        <div class="stats" data-reveal style="--reveal-delay: 220ms">
+            @foreach (var stat in Highlights)
+            {
+                <div class="stat">
+                    <div class="stat__value">@stat.Value</div>
+                    <span class="stat__label">@stat.Label</span>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Profile Profile { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyList<Highlight> Highlights { get; set; } = [];
+
+    // Hand-tokenised rather than shipping a highlighter library for eighteen lines of code.
+    private const string Snippet = """
+<span class="tok-cmt">// Portfolio/About.cs</span>
+<span class="tok-key">namespace</span> <span class="tok-prop">Portfolio</span>;
+
+<span class="tok-key">public sealed record</span> <span class="tok-type">Developer</span>
+{
+    <span class="tok-key">public string</span>   <span class="tok-prop">Name</span>  =&gt; <span class="tok-str">"Christos Galanis"</span>;
+    <span class="tok-key">public string</span>   <span class="tok-prop">Role</span>  =&gt; <span class="tok-str">".NET Developer"</span>;
+    <span class="tok-key">public string</span>   <span class="tok-prop">Based</span> =&gt; <span class="tok-str">"Athens, Greece"</span>;
+
+    <span class="tok-key">public string</span>[] <span class="tok-prop">Stack</span> =&gt;
+    [
+        <span class="tok-str">"C#"</span>, <span class="tok-str">".NET"</span>, <span class="tok-str">"Blazor"</span>, <span class="tok-str">"Dapper"</span>,
+        <span class="tok-str">"MSSQL"</span>, <span class="tok-str">"PostgreSQL"</span>, <span class="tok-str">"Docker"</span>
+    ];
+
+    <span class="tok-key">public int</span>      <span class="tok-prop">CoffeesPerDay</span> =&gt; <span class="tok-num">3</span>;
+    <span class="tok-key">public bool</span>     <span class="tok-prop">OpenToOpportunities</span> =&gt; <span class="tok-key">true</span>;
+}
+""";
+}

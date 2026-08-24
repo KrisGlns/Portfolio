@@ -1,0 +1,42 @@
+<section id="skills" class="section">
+    <div class="page">
+        <div class="section__head" data-reveal>
+            <span class="eyebrow">Skills</span>
+            <h2 class="section__title">The toolbox</h2>
+            <p class="section__lead">
+                Grouped by what I reach for day to day. The bars are a self-assessment, not a certification.
+            </p>
+        </div>
+
+        <div class="skills-grid">
+            @foreach (var (category, index) in Categories.Select((x, i) => (x, i)))
+            {
+                <article class="card skill-card" data-reveal style="--reveal-delay: @(index * 80)ms">
+                    <header class="skill-card__head">
+                        <span class="skill-card__icon"><Icon Name="@category.Icon" /></span>
+                        <h3 class="skill-card__name">@category.Name</h3>
+                    </header>
+
+                    @foreach (var (skill, i) in category.Skills.Select((s, i) => (s, i)))
+                    {
+                        <div class="meter">
+                            <div class="meter__row">
+                                <span class="meter__name">@skill.Name</span>
+                                <span class="meter__value">@skill.Level%</span>
+                            </div>
+                            <div class="meter__track"
+                                 role="meter" aria-valuenow="@skill.Level" aria-valuemin="0" aria-valuemax="100"
+                                 aria-label="@skill.Name proficiency">
+                                <span class="meter__fill" style="--level: @skill.Level%; --reveal-delay: @(150 + i * 70)ms"></span>
+                            </div>
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<SkillCategory> Categories { get; set; } = [];
+}

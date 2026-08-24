@@ -1,0 +1,117 @@
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject ThemeService Theme
+
+<a class="visually-hidden" href="#about">Skip to content</a>
+
+<header class="header">
+    <div class="header__inner">
+        <a class="brand" href="#top" @onclick:preventDefault @onclick="ScrollToTop">
+            <span class="brand__mark">CG</span>
+            <span class="brand__name">Christos Galanis<span class="brand__dot">.</span></span>
+        </a>
+
+        <nav class="nav @(_menuOpen ? "is-open" : null)" aria-label="Sections">
+            @foreach (var (id, label) in Sections)
+            {
+                <button type="button"
+                        class="nav__link @(_active == id ? "is-active" : null)"
+                        aria-current="@(_active == id ? "true" : null)"
+                        @onclick="() => ScrollTo(id)">
+                    @label
+                </button>
+            }
+        </nav>
+
+        <div class="header__actions">
+            <a class="btn btn--ghost btn--sm header__cta" href="@ResumeData.Current.Profile.CvUrl" download>
+                <Icon Name="download" /> CV
+            </a>
+
+            <button type="button" class="icon-btn" @onclick="ToggleTheme"
+                    aria-label="@(Theme.IsDark ? "Switch to light theme" : "Switch to dark theme")"
+                    title="@(Theme.IsDark ? "Switch to light theme" : "Switch to dark theme")">
+                <Icon Name="@(Theme.IsDark ? "sun" : "moon")" />
+            </button>
+
+            <button type="button" class="icon-btn nav-toggle" @onclick="() => _menuOpen = !_menuOpen"
+                    aria-expanded="@_menuOpen" aria-label="Toggle navigation">
+                <Icon Name="@(_menuOpen ? "close" : "menu")" />
+            </button>
+        </div>
+    </div>
+</header>
+
+<main id="top">
+    @Body
+</main>
+
+<footer class="footer">
+    <div class="page footer__inner">
+        <span>&copy; @DateTime.UtcNow.Year Christos Galanis</span>
+        <span class="footer__built">Built with <strong>Blazor WebAssembly</strong> &amp; <strong>.NET 10</strong></span>
+        <div class="footer__links">
+            @foreach (var link in ResumeData.Current.Links)
+            {
+                <a href="@link.Url" target="@(link.Url.StartsWith("mailto:") ? null : "_blank")" rel="noopener">@link.Name</a>
+            }
+        </div>
+    </div>
+</footer>
+
+@code {
+    private static readonly (string Id, string Label)[] Sections =
+    [
+        ("about", "About"),
+        ("experience", "Experience"),
+        ("education", "Education"),
+        ("skills", "Skills"),
+        ("contact", "Contact")
+    ];
+
+    private DotNetObjectReference<MainLayout>? _selfRef;
+    private string _active = "about";
+    private bool _menuOpen;
+
+    protected override void OnInitialized() => Theme.Changed += StateHasChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitializeAsync();
+            await JS.InvokeVoidAsync("portfolio.watchScroll");
+        }
+
+        // Home re-scans on later passes; this only wires up the callback.
+        _selfRef ??= DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("portfolio.observeSections", _selfRef);
+        await JS.InvokeVoidAsync("portfolio.observeReveals");
+    }
+
+    [JSInvokable]
+    public void OnSectionChanged(string id)
+    {
+        if (_active == id) return;
+        _active = id;
+        StateHasChanged();
+    }
+
+    private Task ScrollToTop() => ScrollTo("top");
+
+    private async Task ScrollTo(string id)
+    {
+        _menuOpen = false;
+        await JS.InvokeVoidAsync("portfolio.scrollToSection", id);
+    }
+
+    private Task ToggleTheme() => Theme.ToggleAsync();
+
+    public async ValueTask DisposeAsync()
+    {
+        Theme.Changed -= StateHasChanged;
+        _selfRef?.Dispose();
+        await ValueTask.CompletedTask;
+    }
+}
