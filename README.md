@@ -4,7 +4,7 @@ A personal portfolio site for a .NET developer, built end to end in C#: a **Blaz
 front end, an **ASP.NET Core minimal API** behind the contact form, and a shared class library that
 holds the resume as strongly-typed data.
 
-> Live site: _add your GitHub Pages URL here once the first deploy finishes_
+> Live site: https://krisglns.github.io/Portfolio/
 
 <!-- 📖 **[PROJECT-GUIDE.md](PROJECT-GUIDE.md)** — the full tech stack, local setup, and a step-by-step
 walkthrough for publishing the site for free on GitHub Pages. -->
