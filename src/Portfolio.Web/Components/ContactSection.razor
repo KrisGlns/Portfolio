@@ -183,7 +183,14 @@
         // happens while the visitor is still typing rather than after they press Send.
         if (firstRender && Api.HealthUrl is { } healthUrl)
         {
-            await JS.InvokeVoidAsync("portfolio.warmUpWhenVisible", healthUrl);
+            try
+            {
+                await JS.InvokeVoidAsync("portfolio.warmUpWhenVisible", healthUrl);
+            }
+            catch (JSException)
+            {
+                // Warm-up is an optimisation; without it the first send just waits for the cold start.
+            }
         }
 
         // Submitting destroys the focused Send button, which would drop keyboard and screen-reader
@@ -210,7 +217,15 @@
         _error = null;
 
         // Measure the form before it can be replaced, so the swap causes no layout shift.
-        await JS.InvokeVoidAsync("portfolio.lockContactHeight");
+        // Purely cosmetic: if site.js is stale or blocked, the message must still go out.
+        try
+        {
+            await JS.InvokeVoidAsync("portfolio.lockContactHeight");
+        }
+        catch (JSException)
+        {
+            // Older cached site.js without this helper — swap without the height lock.
+        }
 
         var result = await Api.SendContactAsync(_model, _cts.Token);
 
