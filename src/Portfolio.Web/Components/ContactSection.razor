@@ -55,92 +55,108 @@
                 </div>
             </div>
 
-            @if (Api.ContactEnabled)
-            {
-                <EditForm class="card form" Model="_model" OnValidSubmit="SubmitAsync" data-reveal style="--reveal-delay: 120ms">
-                    <DataAnnotationsValidator />
+            <div class="contact-slot">
+                @if (_sent is not null)
+                {
+                    @* Success replaces the form outright: no live Send button means no ambiguity
+                       and no accidental duplicate submissions. *@
+                    <div class="card sent-card" tabindex="-1" @ref="_sentPanel">
+                        <span class="sent-card__badge"><Icon Name="check" /></span>
+                        <h3 class="sent-card__title">Message sent</h3>
+                        <p class="sent-card__body">
+                            Thanks, <strong>@_sent.FirstName</strong> — your message is in my inbox.
+                            I'll reply to <strong>@_sent.Email</strong> within a couple of days.
+                        </p>
+                        <p class="sent-card__meta">Sent @_sent.SentAt.ToString("d MMM yyyy, HH:mm")</p>
+                    </div>
+                }
+                else if (Api.ContactEnabled)
+                {
+                    <EditForm class="@(_sending ? "card form is-sending" : "card form")" Model="_model" OnValidSubmit="SubmitAsync">
+                        <DataAnnotationsValidator />
 
-                    <div class="field--row">
-                        <div class="field">
-                            <label for="c-name">Name</label>
-                            <InputText id="c-name" @bind-Value="_model.Name" placeholder="Your name" autocomplete="name" />
-                            <ValidationMessage For="() => _model.Name" />
+                        <div class="field--row">
+                            <div class="field">
+                                <label for="c-name">Name</label>
+                                <InputText id="c-name" @bind-Value="_model.Name" placeholder="Your name" autocomplete="name" />
+                                <ValidationMessage For="() => _model.Name" />
+                            </div>
+                            <div class="field">
+                                <label for="c-email">Email</label>
+                                <InputText id="c-email" @bind-Value="_model.Email" placeholder="@("you@example.com")" autocomplete="email" />
+                                <ValidationMessage For="() => _model.Email" />
+                            </div>
                         </div>
+
                         <div class="field">
-                            <label for="c-email">Email</label>
-                            <InputText id="c-email" @bind-Value="_model.Email" placeholder="@("you@example.com")" autocomplete="email" />
-                            <ValidationMessage For="() => _model.Email" />
+                            <label for="c-subject">Subject <span class="form__note">(optional)</span></label>
+                            <InputText id="c-subject" @bind-Value="_model.Subject" placeholder="What's this about?" />
+                            <ValidationMessage For="() => _model.Subject" />
                         </div>
-                    </div>
 
-                    <div class="field">
-                        <label for="c-subject">Subject <span class="form__note">(optional)</span></label>
-                        <InputText id="c-subject" @bind-Value="_model.Subject" placeholder="What's this about?" />
-                        <ValidationMessage For="() => _model.Subject" />
-                    </div>
+                        <div class="field">
+                            <label for="c-message">Message</label>
+                            <InputTextArea id="c-message" rows="6" @bind-Value="_model.Message" placeholder="Tell me what you have in mind…" />
+                            <ValidationMessage For="() => _model.Message" />
+                        </div>
 
-                    <div class="field">
-                        <label for="c-message">Message</label>
-                        <InputTextArea id="c-message" rows="6" @bind-Value="_model.Message" placeholder="Tell me what you have in mind…" />
-                        <ValidationMessage For="() => _model.Message" />
-                    </div>
+                        @* Honeypot — hidden from people, irresistible to bots. *@
+                        <div class="hp" aria-hidden="true">
+                            <label for="c-website">Leave this field empty</label>
+                            <InputText id="c-website" @bind-Value="_model.Website" tabindex="-1" autocomplete="off" />
+                        </div>
 
-                    @* Honeypot — hidden from people, irresistible to bots. *@
-                    <div class="hp" aria-hidden="true">
-                        <label for="c-website">Leave this field empty</label>
-                        <InputText id="c-website" @bind-Value="_model.Website" tabindex="-1" autocomplete="off" />
-                    </div>
+                        @if (_error is not null)
+                        {
+                            @* role="alert" because focus stays on the Send button, ready to retry. *@
+                            <div class="alert alert--err" role="alert">
+                                <Icon Name="alert" />
+                                <span>
+                                    @_error.Message
+                                    @if (_error.Errors is { Count: > 0 })
+                                    {
+                                        <ul>
+                                            @foreach (var message in _error.Errors.SelectMany(e => e.Value))
+                                            {
+                                                <li>@message</li>
+                                            }
+                                        </ul>
+                                    }
+                                </span>
+                            </div>
+                        }
 
-                    @if (_result is not null)
-                    {
-                        <div class="alert @(_result.Success ? "alert--ok" : "alert--err")" role="status">
-                            <Icon Name="@(_result.Success ? "check" : "alert")" />
-                            <span>
-                                @_result.Message
-                                @if (_result.Errors is { Count: > 0 })
+                        <div class="form__foot">
+                            <span class="form__note">I usually reply within a couple of days.</span>
+                            <button class="btn btn--primary" type="submit" disabled="@_sending" @ref="_sendButton">
+                                @if (_sending)
                                 {
-                                    @* Only reachable if the server rejects something the client model allowed. *@
-                                    <ul>
-                                        @foreach (var message in _result.Errors.SelectMany(e => e.Value))
-                                        {
-                                            <li>@message</li>
-                                        }
-                                    </ul>
+                                    <span class="spinner"></span>
+                                    <span>Sending…</span>
                                 }
-                            </span>
+                                else
+                                {
+                                    <Icon Name="send" />
+                                    <span>Send message</span>
+                                }
+                            </button>
                         </div>
-                    }
-
-                    <div class="form__foot">
-                        <span class="form__note">I usually reply within a couple of days.</span>
-                        <button class="btn btn--primary" type="submit" disabled="@_sending">
-                            @if (_sending)
-                            {
-                                <span class="spinner"></span>
-                                <span>Sending…</span>
-                            }
-                            else
-                            {
-                                <Icon Name="send" />
-                                <span>Send message</span>
-                            }
-                        </button>
+                    </EditForm>
+                }
+                else
+                {
+                    <div class="card form">
+                        <h3>Prefer email?</h3>
+                        <p class="section__lead">
+                            The contact form runs against <code>Portfolio.Api</code>, which isn't deployed for this build.
+                            Email is the fastest way to reach me.
+                        </p>
+                        <a class="btn btn--primary" href="mailto:@Profile.Email">
+                            <Icon Name="mail" /> Email @Profile.FullName.Split(' ')[0]
+                        </a>
                     </div>
-                </EditForm>
-            }
-            else
-            {
-                <div class="card form" data-reveal style="--reveal-delay: 120ms">
-                    <h3>Prefer email?</h3>
-                    <p class="section__lead">
-                        The contact form runs against <code>Portfolio.Api</code>, which isn't deployed for this build.
-                        Email is the fastest way to reach me.
-                    </p>
-                    <a class="btn btn--primary" href="mailto:@Profile.Email">
-                        <Icon Name="mail" /> Email @Profile.FullName.Split(' ')[0]
-                    </a>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 </section>
@@ -148,10 +164,18 @@
 @code {
     [Parameter, EditorRequired] public Profile Profile { get; set; } = default!;
 
+    /// <summary>What was sent, captured before the form is torn down so the panel can echo it back.</summary>
+    private sealed record Receipt(string FirstName, string Email, DateTime SentAt);
+
     private ContactRequest _model = new();
-    private SubmitResult? _result;
+    private Receipt? _sent;
+    private SubmitResult? _error;
     private bool _sending;
-    private CancellationTokenSource _cts = new();
+    private bool _panelFocused;
+    private bool _restoreSendFocus;
+    private ElementReference _sentPanel;
+    private ElementReference _sendButton;
+    private readonly CancellationTokenSource _cts = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -161,18 +185,46 @@
         {
             await JS.InvokeVoidAsync("portfolio.warmUpWhenVisible", healthUrl);
         }
+
+        // Submitting destroys the focused Send button, which would drop keyboard and screen-reader
+        // users at the top of the document. Move focus to the panel instead — preventScroll keeps
+        // the page exactly where it is, so sighted users see no movement at all.
+        if (_sent is not null && !_panelFocused)
+        {
+            _panelFocused = true;
+            await _sentPanel.FocusAsync(preventScroll: true);
+        }
+
+        // Disabling the button while sending blurs it, dropping focus to <body>. Put it back
+        // where the visitor left it so retrying is one keystroke, not a re-navigation.
+        if (_restoreSendFocus && !_sending)
+        {
+            _restoreSendFocus = false;
+            await _sendButton.FocusAsync(preventScroll: true);
+        }
     }
 
     private async Task SubmitAsync()
     {
         _sending = true;
-        _result = null;
+        _error = null;
 
-        _result = await Api.SendContactAsync(_model, _cts.Token);
+        // Measure the form before it can be replaced, so the swap causes no layout shift.
+        await JS.InvokeVoidAsync("portfolio.lockContactHeight");
 
-        if (_result.Success)
+        var result = await Api.SendContactAsync(_model, _cts.Token);
+
+        if (result.Success)
         {
-            _model = new ContactRequest();
+            var name = _model.Name.Trim();
+            var firstName = name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? name;
+            _sent = new Receipt(firstName, _model.Email.Trim(), DateTime.Now);
+        }
+        else
+        {
+            // Keep the form and everything they typed — every failure here is worth retrying.
+            _error = result;
+            _restoreSendFocus = true;
         }
 
         _sending = false;

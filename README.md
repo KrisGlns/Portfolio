@@ -17,20 +17,33 @@ serves it over `GET /api/resume`, and the client falls back to the compiled copy
 unreachable. The result deploys to GitHub Pages as pure static files and still works — the only
 feature that needs the backend is the contact form, which hides itself and offers a mailto instead.
 
+## What the site does
+
+- **One page**: a hero plus the five sections the nav tracks — about, experience timeline, education, skills, contact — all driven from `ResumeData`.
+- **Light/dark theme** persisted in `localStorage`, applied by an inline script before first paint so there is no flash of the wrong palette.
+- **Scroll-reveal and scroll-spy** via `IntersectionObserver`; both stand down under `prefers-reduced-motion`.
+- **CV download** straight from `wwwroot/files/`.
+- **Working contact form** — client and server validate the same annotated model, a honeypot absorbs bots, and a successful send replaces the form with a confirmation that echoes back the address the reply will go to.
+- **Degrades to a static page.** With no API configured the site still renders in full from the compiled-in resume data and offers a mailto card instead of the form.
+
 ## Solution layout
 
 ```
 Portfolio.slnx
-├─ src/Portfolio.Shared      Resume model + data, contact DTOs. Referenced by both ends.
-├─ src/Portfolio.Api         ASP.NET Core minimal API: /api/resume, /api/contact, /api/health
-└─ src/Portfolio.Web         Blazor WebAssembly standalone app (the site itself)
+├─ .github/workflows/        ci.yml (build) + deploy-pages.yml (publish the site)
+├─ render.yaml               Render Blueprint — the whole API service, declared
+├─ .dockerignore             keeps bin/obj and the Blazor project out of the build context
+└─ src/
+   ├─ Portfolio.Shared       Resume model + data, contact DTOs. Referenced by both ends.
+   ├─ Portfolio.Api          ASP.NET Core minimal API: /api/resume, /api/health, /api/contact
+   └─ Portfolio.Web          Blazor WebAssembly standalone app (the site itself)
 ```
 
 | Project | Notable pieces |
 | --- | --- |
 | `Portfolio.Shared` | `ResumeData.Current` — the single source of truth for every word on the site. `ContactRequest` carries the DataAnnotations used for validation on **both** sides of the wire. |
 | `Portfolio.Api` | Endpoint groups in `Endpoints/`, a `ResendEmailSender` that posts to Resend's REST API with no SDK, per-IP fixed-window rate limiting, a form honeypot, configurable CORS, OpenAPI in development. |
-| `Portfolio.Web` | `PortfolioApiClient` with graceful degradation, `ThemeService` over JS interop, one global stylesheet (`wwwroot/css/app.css`), scroll-reveal and scroll-spy via `IntersectionObserver` in `wwwroot/js/site.js`. |
+| `Portfolio.Web` | `PortfolioApiClient` with graceful degradation, `ThemeService` over JS interop, one global stylesheet (`wwwroot/css/app.css`), and ~120 lines of vanilla JS in `wwwroot/js/site.js` for scroll-reveal, scroll-spy, API warm-up and the contact card's height lock. |
 
 ## Running it locally
 
@@ -61,8 +74,10 @@ it cannot deliver.
 
 ```bash
 docker build -f src/Portfolio.Api/Dockerfile -t portfolio-api .
-docker run -p 8080:8080 -v portfolio-data:/app/data portfolio-api
+docker run -p 8080:8080 -e Resend__ApiKey=re_... portfolio-api
 ```
+
+No volume: the API writes nothing to disk.
 
 ## Editing the content
 
@@ -92,6 +107,11 @@ The API is **stateless**: messages go straight out through Resend and nothing to
 suits a free tier with an ephemeral filesystem. If Resend rejects a message the API logs it in full
 and returns `502`, so nothing is ever silently dropped.
 
+The container sets `DOTNET_hostBuilder__reloadConfigOnChange=false`. Config is baked into the image
+and cannot change at runtime, so the file watchers .NET would otherwise start are pure cost — and
+each one consumes an inotify instance, a limit shared across containers that small hosts do run out
+of.
+
 Free instances sleep after ~15 minutes. The site pings `/api/health` once when the contact section
 scrolls into view, so the container wakes while the visitor is still typing.
 
@@ -104,6 +124,11 @@ scrolls into view, so the container wakes while the visitor is still typing.
 | `Resend:ApiKey` | **environment / user secrets only** | empty | Resend API key. Never commit it. Empty ⇒ `/api/contact` returns 503. |
 | `Resend:From` | `Portfolio.Api/appsettings.json` | `Portfolio <onboarding@resend.dev>` | Sender. The sandbox domain needs no DNS setup. |
 | `Resend:To` | `Portfolio.Api/appsettings.json` | your address | Recipient. Must be the Resend account's own address while using the sandbox sender. |
+| `Resend:SubjectPrefix` | `Portfolio.Api/appsettings.json` | `Portfolio` | Prepended to the subject line so form mail is easy to filter. |
+| `Resend:BaseUrl` | `Portfolio.Api/appsettings.json` | `https://api.resend.com/` | Override only to test against a stub or an API-compatible provider. |
+
+Any of these can be supplied as an environment variable with `__` in place of `:` —
+`Resend__ApiKey`, `Cors__AllowedOrigins__0` — which is how the Render service is configured.
 
 ## Built with
 

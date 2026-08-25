@@ -111,5 +111,14 @@ window.portfolio = (function () {
         onScroll();
     }
 
-    return { getTheme, setTheme, observeReveals, observeSections, refreshSections, scrollToSection, watchScroll, warmUpWhenVisible };
+    // Pin the contact card to its current height before the form is swapped for the
+    // confirmation panel, so nothing below it moves. Measured, not guessed, because the
+    // form's height varies with viewport and validation messages.
+    function lockContactHeight() {
+        const slot = document.querySelector('.contact-slot');
+        if (!slot) return;
+        slot.style.minHeight = slot.offsetHeight + 'px';
+    }
+
+    return { getTheme, setTheme, observeReveals, observeSections, refreshSections, scrollToSection, watchScroll, warmUpWhenVisible, lockContactHeight };
 })();

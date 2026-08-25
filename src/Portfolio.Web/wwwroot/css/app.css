@@ -936,6 +936,78 @@ a.fact__value:hover { color: var(--accent-text); }
 
 @media (max-width: 900px) { .contact { grid-template-columns: minmax(0, 1fr); } }
 
+/* Holds either the form or the success panel. The min-height keeps the footer from
+   jumping when the taller form is swapped for the shorter confirmation. */
+.contact-slot { display: grid; min-height: 320px; }
+.contact-slot > * { grid-area: 1 / 1; }
+
+/* Dim the form while the request is in flight, so the swap that follows reads as
+   one continuous transition rather than an abrupt replacement. */
+.form.is-sending {
+    opacity: .55;
+    pointer-events: none;
+    transition: opacity .25s var(--ease);
+}
+
+.sent-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: .75rem;
+    padding: clamp(1.75rem, 4vw, 2.75rem);
+    animation: sent-in .5s var(--ease) both;
+}
+
+.sent-card:focus { outline: none; }
+.sent-card:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+
+@keyframes sent-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+}
+
+.sent-card__badge {
+    width: 62px; height: 62px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+    margin-bottom: .35rem;
+    animation: badge-pop .45s var(--ease) .12s both;
+}
+
+.sent-card__badge svg { width: 28px; height: 28px; stroke-width: 2.2; }
+
+@keyframes badge-pop {
+    from { opacity: 0; transform: scale(.6); }
+    to { opacity: 1; transform: none; }
+}
+
+.sent-card__title { font-size: var(--step-2); }
+
+.sent-card__body {
+    color: var(--text-dim);
+    max-width: 38ch;
+    font-size: var(--step-1);
+    line-height: 1.6;
+}
+
+.sent-card__body strong { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
+
+.sent-card__meta {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--text-faint);
+    margin-top: .35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sent-card, .sent-card__badge { animation: none; }
+}
+
 /* --- Footer ------------------------------------------------------------- */
 
 .footer {
