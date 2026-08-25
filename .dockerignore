@@ -1,0 +1,12 @@
+# Keep the build context small — the Dockerfile restores and publishes from source.
+**/bin/
+**/obj/
+**/publish/
+.git/
+.github/
+.vs/
+.idea/
+node_modules/
+*.user
+*.md
+src/Portfolio.Web/

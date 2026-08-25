@@ -29,7 +29,7 @@ Portfolio.slnx
 | Project | Notable pieces |
 | --- | --- |
 | `Portfolio.Shared` | `ResumeData.Current` — the single source of truth for every word on the site. `ContactRequest` carries the DataAnnotations used for validation on **both** sides of the wire. |
-| `Portfolio.Api` | Endpoint groups in `Endpoints/`, a file-backed `ContactMessageStore` (JSON Lines), per-IP fixed-window rate limiting, configurable CORS, OpenAPI in development. |
+| `Portfolio.Api` | Endpoint groups in `Endpoints/`, a `ResendEmailSender` that posts to Resend's REST API with no SDK, per-IP fixed-window rate limiting, a form honeypot, configurable CORS, OpenAPI in development. |
 | `Portfolio.Web` | `PortfolioApiClient` with graceful degradation, `ThemeService` over JS interop, one global stylesheet (`wwwroot/css/app.css`), scroll-reveal and scroll-spy via `IntersectionObserver` in `wwwroot/js/site.js`. |
 
 ## Running it locally
@@ -47,6 +47,15 @@ dotnet run --project src/Portfolio.Web
 
 Skip the API entirely if you only care about the site — it renders the same content from
 `ResumeData` and swaps the contact form for a mailto card.
+
+To actually send mail locally, supply a Resend key through user secrets rather than a file:
+
+```bash
+dotnet user-secrets set "Resend:ApiKey" "re_..." --project src/Portfolio.Api
+```
+
+Without a key the endpoint returns `503` and the form says so plainly — it never accepts a message
+it cannot deliver.
 
 ### Running the API in Docker
 
@@ -72,14 +81,19 @@ push to `main`. It rewrites `<base href>` to the repository sub-path, copies `in
 `404.html` so deep links work without an SPA fallback, and drops a `.nojekyll` file so the
 `_framework` directory survives. Enable it once under **Settings → Pages → Source → GitHub Actions**.
 
-**The API → anywhere that runs a container.** Azure App Service, Render, Fly.io, a VPS. Then:
+**The API → Render, via the blueprint.** `render.yaml` describes the whole service, so
+Render → New → Blueprint → this repo is the entire setup. Supply `Resend__ApiKey` when prompted; it
+is never committed. Then:
 
-1. Set `Cors:AllowedOrigins` on the API to your Pages URL.
-2. Set `Api.BaseUrl` in `src/Portfolio.Web/wwwroot/appsettings.json` to the API's public URL.
-3. Push — the contact form appears on the next deploy.
+1. Set `Api.BaseUrl` in `src/Portfolio.Web/wwwroot/appsettings.json` to the Render URL.
+2. Push — the contact form appears on the next Pages deploy.
 
-Contact submissions are appended to `data/messages.jsonl` next to the API. Mount a volume if you
-want them to outlive a redeploy, or swap `ContactMessageStore` for email or a database.
+The API is **stateless**: messages go straight out through Resend and nothing touches disk, which
+suits a free tier with an ephemeral filesystem. If Resend rejects a message the API logs it in full
+and returns `502`, so nothing is ever silently dropped.
+
+Free instances sleep after ~15 minutes. The site pings `/api/health` once when the contact section
+scrolls into view, so the container wakes while the visitor is still typing.
 
 ## Configuration reference
 
@@ -87,7 +101,9 @@ want them to outlive a redeploy, or swap `ContactMessageStore` for email or a da
 | --- | --- | --- | --- |
 | `Api:BaseUrl` | `Portfolio.Web/wwwroot/appsettings*.json` | empty | API root. Empty ⇒ fully static, contact form hidden. |
 | `Cors:AllowedOrigins` | `Portfolio.Api/appsettings*.json` | empty | Allowed browser origins. Empty ⇒ any origin (fine locally, tighten in production). |
-| `Contact:StorePath` | `Portfolio.Api/appsettings*.json` | `./data/messages.jsonl` | Where contact messages are appended. |
+| `Resend:ApiKey` | **environment / user secrets only** | empty | Resend API key. Never commit it. Empty ⇒ `/api/contact` returns 503. |
+| `Resend:From` | `Portfolio.Api/appsettings.json` | `Portfolio <onboarding@resend.dev>` | Sender. The sandbox domain needs no DNS setup. |
+| `Resend:To` | `Portfolio.Api/appsettings.json` | your address | Recipient. Must be the Resend account's own address while using the sandbox sender. |
 
 ## Built with
 

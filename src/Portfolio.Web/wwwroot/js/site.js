@@ -4,6 +4,7 @@ window.portfolio = (function () {
     let revealObserver = null;
     let scrollSpyObserver = null;
     let dotNetRef = null;
+    let warmedUp = false;
 
     function safeStorage(fn, fallback) {
         try { return fn(); } catch (e) { return fallback; }
@@ -83,6 +84,25 @@ window.portfolio = (function () {
         el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
     }
 
+    // The API sleeps on a free tier and takes ~50s to wake. Ping it once the moment the contact
+    // section becomes visible: the visitor still has to read and type, which is far longer than the
+    // cold start. Fire-and-forget, no-cors, and only for people who actually scroll this far.
+    function warmUpWhenVisible(healthUrl) {
+        if (!healthUrl || warmedUp) return;
+        const target = document.getElementById('contact');
+        if (!target) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (!entries.some(e => e.isIntersecting)) return;
+            observer.disconnect();
+            if (warmedUp) return;
+            warmedUp = true;
+            fetch(healthUrl, { mode: 'no-cors', cache: 'no-store' }).catch(() => { /* waking it is enough */ });
+        }, { rootMargin: '200px 0px' });
+
+        observer.observe(target);
+    }
+
     function watchScroll() {
         const onScroll = () => {
             document.body.classList.toggle('is-scrolled', window.scrollY > 12);
@@ -91,5 +111,5 @@ window.portfolio = (function () {
         onScroll();
     }
 
-    return { getTheme, setTheme, observeReveals, observeSections, refreshSections, scrollToSection, watchScroll };
+    return { getTheme, setTheme, observeReveals, observeSections, refreshSections, scrollToSection, watchScroll, warmUpWhenVisible };
 })();

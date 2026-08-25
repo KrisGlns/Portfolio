@@ -11,7 +11,7 @@ public static class ContactEndpoints
         app.MapPost("/api/contact", HandleAsync)
            .WithTags("Contact")
            .WithName("SubmitContactMessage")
-           .WithSummary("Accepts a message from the portfolio contact form.")
+           .WithSummary("Accepts a message from the portfolio contact form and emails it on via Resend.")
            .RequireRateLimiting(RateLimitPolicies.Contact)
            .Produces<ContactResponse>()
            .ProducesValidationProblem();
@@ -21,7 +21,7 @@ public static class ContactEndpoints
 
     private static async Task<IResult> HandleAsync(
         ContactRequest request,
-        ContactMessageStore store,
+        ResendEmailSender email,
         HttpContext http,
         ILoggerFactory loggerFactory,
         CancellationToken ct)
@@ -40,7 +40,23 @@ public static class ContactEndpoints
             return Results.ValidationProblem(errors);
         }
 
-        await store.SaveAsync(request, http.Connection.RemoteIpAddress?.ToString(), ct);
+        // Fail loudly rather than accepting a message nothing will ever deliver.
+        if (!email.IsConfigured)
+        {
+            loggerFactory.CreateLogger("Contact")
+                .LogError("Resend is not configured — set Resend__ApiKey and Resend__To. Message dropped from {Email}.", request.Email);
+
+            return Results.Json(
+                new ContactResponse(false, "The contact service isn't configured right now — please email me directly."),
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        if (!await email.SendAsync(request, ct))
+        {
+            return Results.Json(
+                new ContactResponse(false, "I couldn't send that just now — please email me directly."),
+                statusCode: StatusCodes.Status502BadGateway);
+        }
 
         return Results.Ok(new ContactResponse(true, "Thanks — your message landed. I'll get back to you shortly."));
     }
