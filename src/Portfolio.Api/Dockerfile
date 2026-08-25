@@ -17,5 +17,11 @@ COPY --from=build /app .
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 
+# appsettings.json is baked into the image and cannot change at runtime, so watching it
+# buys nothing -- and every watcher costs an inotify instance, a scarce resource shared
+# across containers on small Linux hosts. Without this, startup intermittently dies with:
+#   IOException: The configured user limit (128) on the number of inotify instances has been reached
+ENV DOTNET_hostBuilder__reloadConfigOnChange=false
+
 # Stateless by design: messages go straight out through Resend, nothing is written to disk.
 ENTRYPOINT ["dotnet", "Portfolio.Api.dll"]
