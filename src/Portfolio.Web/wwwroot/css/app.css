@@ -732,6 +732,45 @@ a.fact__value:hover { color: var(--accent-text); }
     .tl-card { padding: 1.2rem 1.1rem; }
 }
 
+/* A period that belongs on the timeline for continuity but is not a job: no fill, a dashed
+   outline, muted text and a smaller hollow marker, so it never reads as professional experience. */
+.tl-card--compact {
+    padding: .85rem 1.15rem;
+    background: none;
+    border-style: dashed;
+    border-color: var(--border);
+    backdrop-filter: none;
+}
+
+.tl-card--compact .tl-card__company {
+    font-size: var(--step-0);
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 0;
+}
+
+.tl-card--compact .tl-card__head { align-items: center; }
+
+.tl-item--compact::before {
+    width: 12px; height: 12px;
+    left: calc(-2.4rem + 4px);
+    top: 1.05rem;
+    border-width: 2px;
+    border-style: dashed;
+    border-color: var(--border-strong);
+}
+
+.tl-item--compact:hover .tl-card {
+    background: none;
+    border-color: var(--border-strong);
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    .tl-item--compact::before { left: calc(-1.8rem + 2px); width: 11px; height: 11px; top: .95rem; }
+    .tl-card--compact { padding: .8rem .95rem; }
+}
+
 /* --- Education ---------------------------------------------------------- */
 
 .edu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 1.25rem; }

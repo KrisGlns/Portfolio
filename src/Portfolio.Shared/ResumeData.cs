@@ -79,6 +79,13 @@ public static class ResumeData
                 ],
                 Stack = [".NET", "DevExpress XAF", "REST APIs", "PostgreSQL", "Git", "Docker", "Azure Dev Ops"]
             },
+            // Not professional experience — present only so the timeline has no unexplained gap.
+            new ExperienceItem
+            {
+                Company = "Mandatory Military Obligations",
+                Period = "Jan 2023 — Oct 2023",
+                Compact = true
+            },
             new ExperienceItem
             {
                 Company = "Logstail",

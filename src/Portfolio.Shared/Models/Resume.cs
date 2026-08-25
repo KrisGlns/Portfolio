@@ -25,13 +25,21 @@ public sealed record Profile
 
 public sealed record ExperienceItem
 {
+    /// <summary>The employer, or for a <see cref="Compact"/> entry simply the label for the period.</summary>
     public required string Company { get; init; }
-    public required string Role { get; init; }
-    public required string Location { get; init; }
     public required string Period { get; init; }
+    public string? Role { get; init; }
+    public string? Location { get; init; }
     public bool Current { get; init; }
-    public required IReadOnlyList<string> Achievements { get; init; }
-    public required IReadOnlyList<string> Stack { get; init; }
+
+    /// <summary>
+    /// Renders as a reduced, secondary entry. Used for periods that belong on the timeline for
+    /// continuity but are not professional experience, so they should not read as a job.
+    /// </summary>
+    public bool Compact { get; init; }
+
+    public IReadOnlyList<string> Achievements { get; init; } = [];
+    public IReadOnlyList<string> Stack { get; init; } = [];
 }
 
 public sealed record EducationItem

@@ -12,9 +12,9 @@
         <ol class="timeline">
             @foreach (var (item, index) in Items.Select((x, i) => (x, i)))
             {
-                <li class="tl-item @(item.Current ? "tl-item--current" : null)"
+                <li class="tl-item @(item.Current ? "tl-item--current" : null) @(item.Compact ? "tl-item--compact" : null)"
                     data-reveal style="--reveal-delay: @(index * 90)ms">
-                    <article class="card tl-card">
+                    <article class="card tl-card @(item.Compact ? "tl-card--compact" : null)">
                         <header class="tl-card__head">
                             <div>
                                 <h3 class="tl-card__company">
@@ -24,25 +24,37 @@
                                         <span class="badge-now">Now</span>
                                     }
                                 </h3>
-                                <div class="tl-card__role">@item.Role</div>
-                                <div class="tl-card__meta"><Icon Name="map-pin" /> @item.Location</div>
+                                @if (!string.IsNullOrWhiteSpace(item.Role))
+                                {
+                                    <div class="tl-card__role">@item.Role</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(item.Location))
+                                {
+                                    <div class="tl-card__meta"><Icon Name="map-pin" /> @item.Location</div>
+                                }
                             </div>
                             <time class="tl-card__period">@item.Period</time>
                         </header>
 
-                        <ul class="tl-card__list">
-                            @foreach (var achievement in item.Achievements)
-                            {
-                                <li>@achievement</li>
-                            }
-                        </ul>
+                        @if (item.Achievements.Count > 0)
+                        {
+                            <ul class="tl-card__list">
+                                @foreach (var achievement in item.Achievements)
+                                {
+                                    <li>@achievement</li>
+                                }
+                            </ul>
+                        }
 
-                        <div class="chips">
-                            @foreach (var tech in item.Stack)
-                            {
-                                <span class="chip">@tech</span>
-                            }
-                        </div>
+                        @if (item.Stack.Count > 0)
+                        {
+                            <div class="chips">
+                                @foreach (var tech in item.Stack)
+                                {
+                                    <span class="chip">@tech</span>
+                                }
+                            </div>
+                        }
                     </article>
                 </li>
             }
