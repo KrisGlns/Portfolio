@@ -31,6 +31,14 @@ public sealed class PortfolioApiClient(HttpClient http, ApiOptions options, ILog
 {
     public bool ContactEnabled => options.IsConfigured;
 
+    /// <summary>
+    /// Absolute URL of the health endpoint. The page pings it once when the contact section scrolls
+    /// into view, so a sleeping free-tier container is awake by the time anyone presses Send.
+    /// </summary>
+    public string? HealthUrl => options.IsConfigured
+        ? new Uri(new Uri(options.BaseUrl!), "api/health").ToString()
+        : null;
+
     public async Task<Resume> GetResumeAsync(CancellationToken ct = default)
     {
         if (!options.IsConfigured)
@@ -70,6 +78,17 @@ public sealed class PortfolioApiClient(HttpClient http, ApiOptions options, ILog
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 return new SubmitResult(false, "That's a few messages in a short window. Please try again a little later.");
+            }
+
+            // 503 = the API has no Resend key; 502 = Resend refused or was unreachable.
+            // Both carry a ContactResponse explaining themselves; append the address so the
+            // visitor always leaves with a way to reach you.
+            if (response.StatusCode is HttpStatusCode.ServiceUnavailable or HttpStatusCode.BadGateway)
+            {
+                var problem = await response.Content.ReadFromJsonAsync<ContactResponse>(ct);
+                logger.LogError("Contact endpoint returned {Status}.", (int)response.StatusCode);
+                return new SubmitResult(false,
+                    $"{problem?.Message ?? "The contact service is unavailable."} You can reach me at {ResumeData.Email}.");
             }
 
             if (response.StatusCode == HttpStatusCode.BadRequest)

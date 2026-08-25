@@ -1,4 +1,5 @@
 @inject PortfolioApiClient Api
+@inject IJSRuntime JS
 @implements IDisposable
 
 <section id="contact" class="section">
@@ -151,6 +152,16 @@
     private SubmitResult? _result;
     private bool _sending;
     private CancellationTokenSource _cts = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Wake the free-tier API as soon as this section scrolls into view, so the cold start
+        // happens while the visitor is still typing rather than after they press Send.
+        if (firstRender && Api.HealthUrl is { } healthUrl)
+        {
+            await JS.InvokeVoidAsync("portfolio.warmUpWhenVisible", healthUrl);
+        }
+    }
 
     private async Task SubmitAsync()
     {

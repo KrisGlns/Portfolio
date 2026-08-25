@@ -1,0 +1,28 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Render → New → Blueprint → pick this repo. Everything below is applied automatically;
+# the only thing you supply by hand is the Resend API key (sync: false keeps it out of git).
+services:
+  - type: web
+    name: portfolio-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./src/Portfolio.Api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Must match ASPNETCORE_HTTP_PORTS in the Dockerfile.
+      - key: PORT
+        value: 8080
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # Prompted for on first deploy, then stored encrypted by Render. Never in git.
+      - key: Resend__ApiKey
+        sync: false
+      - key: Resend__To
+        value: chris_glns@hotmail.com
+      # The published site's origin. Without this the browser blocks the request.
+      - key: Cors__AllowedOrigins__0
+        value: https://krisglns.github.io

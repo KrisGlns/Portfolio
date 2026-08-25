@@ -13,10 +13,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app .
 
+# Render sets PORT; keep the two in step (see render.yaml).
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 
-# Contact messages land here — mount a volume if you want them to survive redeploys.
-VOLUME ["/app/data"]
-
+# Stateless by design: messages go straight out through Resend, nothing is written to disk.
 ENTRYPOINT ["dotnet", "Portfolio.Api.dll"]
